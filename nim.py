@@ -150,12 +150,13 @@ class NimAI():
         if len(Nim.available_actions(state))==0:
             return 0 
         
-        max_q_value=-2
-        for item in Nim.available_actions(state):    
-            v=self.get_q_value(state,item)              
-            if v>max_q_value:
-                max_q_value=v
-
+        # else find the best action (highest q value)
+        max_q_value=-float('inf')
+        for action in Nim.available_actions(state):    
+            q_value=self.get_q_value(state,action)              
+            if q_value>max_q_value:
+                max_q_value=q_value
+                
         return max_q_value              
 
     def choose_action(self, state, epsilon=True):
@@ -173,44 +174,30 @@ class NimAI():
         If multiple actions have the same Q-value, any of those
         options is an acceptable return value.
         """     
-        state=tuple(state)
+        state = tuple(state)
+        possible_actions = list(Nim.available_actions(state))
+
+        # Randomly choose an action with epsilon probability
+        if epsilon and random.random() <= self.epsilon:
+            return random.choice(possible_actions)
+
+        # Otherwise, choose the best action based on Q-values
+        best_action = None
+        max_q = -float('inf')
+
+        for action in possible_actions:
+            q_value = self.get_q_value(state, action)
+            if q_value > max_q:
+                max_q = q_value
+                best_action = action
+
+        # If no Q-values are available, pick a random action
+        if best_action is None:
+            return random.choice(possible_actions)
         
-        if epsilon==False:
-            max_q=0
-            for item in Nim.available_actions(state):
-                    q_value=self.get_q_value(state,item)
-                    if q_value > max_q:
-                        action=item
-                        max_q=q_value
+        return best_action
 
-            # return 0 if state,action pair has no q value, else return best action
-            if max_q == 0:
-                return random.choice(tuple(Nim.available_actions(state)))
-
-            else:
-                return action             
-        
-        else:
-            rand_value=random.random()
-            possible_actions=Nim.available_actions(state)
-            if rand_value <= self.epsilon:
-                random_pair=random.choice(tuple(possible_actions))
-                return random_pair
-            else:
-                max_q=0
-                for item in Nim.available_actions(state):
-                        q_value=self.get_q_value(state,item)
-                        if q_value > max_q:
-                            action=item
-                            max_q=q_value
-
-                # return 0 if state,action pair has no q value, else return best action
-                if max_q == 0:
-                    return random.choice(tuple(Nim.available_actions(state)))
-
-                else:
-                    return action  
-            
+       
 def train(n):
     """
     Train an AI by playing `n` games against itself.
